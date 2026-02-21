@@ -1,5 +1,5 @@
 const S = {
-  imgSrc: null, fileName: null, fmt: 'png', res: 2,
+  imgSrc: null, fileName: null, fmt: 'png', res: 1,
   devtype: 'browser', device: 'browser', browserTheme: 'bk',
   stageW: 1920, stageH: 1080,
   ssBGMode: 'solid', ssBGColor: '#111111',
@@ -8,13 +8,18 @@ const S = {
 };
 
 const BOOT_LINES = [
-  { t: 0,   h: '<span class="d">initializing ss-editor v2.0.0...</span>' },
-  { t: 160, h: '<span class="d">loading modules      </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 290, h: '<span class="d">canvas engine        </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 400, h: '<span class="d">export pipeline      </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 490, h: '<span class="d">device frames        </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 570, h: '' },
-  { t: 610, h: '<span class="b">SS EDITOR</span>  — screenshot mockup tool' },
+  { t: 0,    h: '<span class="d">ss-editor v3.0 — booting...</span>' },
+  { t: 320,  h: '<span class="d">checking environment    </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 600,  h: '<span class="d">loading font assets     </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 850,  h: '<span class="d">init canvas engine      </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 1080, h: '<span class="d">mounting device frames  </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 1280, h: '<span class="d">wiring export pipeline  </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 1460, h: '<span class="d">loading syntax engine   </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 1620, h: '<span class="d">setting up stage        </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 1760, h: '' },
+  { t: 1860, h: '<span class="b">SS EDITOR</span>  <span class="d">— screenshot mockup tool  v3.0</span>' },
+  { t: 2100, h: '' },
+  { t: 2200, h: '<span class="d">ready. drop a screenshot or paste code to begin.</span>' },
 ];
 
 const bootOut   = document.getElementById('boot-out');
@@ -23,7 +28,7 @@ const bootTyped = document.getElementById('boot-typed');
 (function runBoot() {
   let i = 0;
   function next() {
-    if (i >= BOOT_LINES.length) { setTimeout(launch, 300); return; }
+    if (i >= BOOT_LINES.length) { setTimeout(launch, 700); return; }
     const line = BOOT_LINES[i++];
     setTimeout(() => {
       if (line.h !== '') { const d = document.createElement('div'); d.innerHTML = line.h; bootOut.appendChild(d); }
@@ -282,13 +287,20 @@ function applySSBG() {
   } else if (S.ssBGMode === 'none') {
     bg = 'transparent';
   }
-  document.getElementById('ss-stage').style.background = bg;
+  const stage = document.getElementById('ss-stage');
+  stage.style.background = bg;
+  // In code mode stage is auto-sized: add padding so bg wraps the frame
+  if (S.devtype === 'code') {
+    stage.style.padding = S.ssBGMode === 'none' ? '0' : '60px';
+  } else {
+    stage.style.padding = '0';
+  }
 }
 
 function setSSBGPreset(c, el) {
   S.ssBGColor = c;
   document.getElementById('ssbg-color').value = c;
-  document.querySelectorAll('.cp').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('on'));
   if (el) el.classList.add('on');
   document.querySelectorAll('#g-ssbg .bg-tab').forEach(t => t.classList.remove('on'));
   document.querySelector('#g-ssbg [data-v="solid"]').classList.add('on');
@@ -300,12 +312,11 @@ function setSSBGPreset(c, el) {
 
 function setSSBGCustom(c) {
   S.ssBGColor = c;
-  document.querySelectorAll('.cp').forEach(p => p.classList.remove('on'));
-  const btn = document.querySelector('.cp-custom');
+  document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('on'));
+  const btn = document.querySelector('.color-preset-custom');
   if (btn) { btn.classList.add('on'); btn.style.background = c; }
   applySSBG();
 }
-  applySSBG();
 
 function pickGradPreset(el) {
   document.querySelectorAll('.grad-swatch').forEach(s => s.classList.remove('on'));
@@ -396,6 +407,83 @@ async function captureStage(scale) {
     if (el && el.style.display !== 'none') { frameEl = el; break; }
   }
 
+  // ── CODE SNAP: tight canvas around the frame ─────────────────────────────
+  if (S.imgSrc === 'code') {
+    if (!frameEl) { toast('no frame found'); return null; }
+
+    // Temporarily remove all transforms so offsetWidth/Height is real pixels
+    const savedMT  = mockup ? mockup.style.transform : '';
+    const savedPad = stage.style.padding;
+    const savedW   = stage.style.width;
+    const savedH   = stage.style.height;
+    const savedTr  = stage.style.transform;
+
+    if (mockup) mockup.style.transform = 'none';
+    stage.style.transform = 'none';
+    stage.style.width  = 'auto';
+    stage.style.height = 'auto';
+    stage.style.padding = '0';
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    const frameW = frameEl.offsetWidth;
+    const frameH = frameEl.offsetHeight;
+
+    // Render code frame via html2canvas
+    const frameCv = await html2canvas(frameEl, {
+      backgroundColor: null,
+      scale,
+      useCORS: true, allowTaint: true, logging: false,
+      width: frameW, height: frameH,
+    });
+
+    // Restore everything
+    if (mockup) mockup.style.transform = savedMT;
+    stage.style.transform = savedTr;
+    stage.style.width   = savedW;
+    stage.style.height  = savedH;
+    stage.style.padding = savedPad;
+
+    // Build output canvas: frame + 60px padding on all sides for the background
+    const PAD  = 60;
+    const outW = frameW + PAD * 2;
+    const outH = frameH + PAD * 2;
+    const out  = document.createElement('canvas');
+    out.width  = outW * scale;
+    out.height = outH * scale;
+    const octx = out.getContext('2d');
+    octx.scale(scale, scale);
+
+    // Fill background
+    if (S.ssBGMode === 'solid') {
+      octx.fillStyle = S.ssBGColor || '#111';
+      octx.fillRect(0, 0, outW, outH);
+    } else if (S.ssBGMode === 'gradient') {
+      const c1  = document.getElementById('ssbg-c1').value;
+      const c2  = document.getElementById('ssbg-c2').value;
+      const ang = parseFloat(document.getElementById('sl-ssbg-ang').value) * Math.PI / 180;
+      const dx  = Math.cos(ang), dy = Math.sin(ang);
+      const len = Math.abs(outW * dx) + Math.abs(outH * dy);
+      const grd = octx.createLinearGradient(outW/2-dx*len/2, outH/2-dy*len/2, outW/2+dx*len/2, outH/2+dy*len/2);
+      grd.addColorStop(0, c1); grd.addColorStop(1, c2);
+      octx.fillStyle = grd;
+      octx.fillRect(0, 0, outW, outH);
+    }
+    // else transparent — no fill
+
+    // Draw frame centered with shadow
+    octx.save();
+    octx.globalAlpha = S.opacity / 100;
+    if (S.shadow > 0) {
+      octx.shadowColor   = `rgba(0,0,0,${Math.min(0.3 + S.shadow * 0.07, 0.95)})`;
+      octx.shadowBlur    = S.shadow * 10;
+      octx.shadowOffsetY = S.shadow * 3;
+    }
+    octx.drawImage(frameCv, PAD, PAD, frameW, frameH);
+    octx.restore();
+    return out;
+  }
+
+  // ── NORMAL SCREENSHOT ──────────────────────────────────────────────────────
   const cv  = document.createElement('canvas');
   cv.width  = S.stageW * scale;
   cv.height = S.stageH * scale;
@@ -419,38 +507,6 @@ async function captureStage(scale) {
   }
 
   if (!S.imgSrc || !frameEl) return cv;
-
-  if (S.imgSrc === 'code') {
-    const mockup  = document.getElementById('mockup');
-    const savedMT = mockup ? mockup.style.transform : '';
-    if (mockup) mockup.style.transform = 'none';
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const frameCv = await html2canvas(frameEl, {
-      backgroundColor: null, scale, useCORS: true, allowTaint: true, logging: false,
-    });
-    if (mockup) mockup.style.transform = savedMT;
-    const sc = S.scale / 100;
-    const cx = S.stageW / 2 + S.hpos;
-    const cy = S.stageH / 2 + S.vpos;
-    const fw = frameCv.width  / scale;
-    const fh = frameCv.height / scale;
-    const fx = cx - fw / 2;
-    const fy = cy - fh / 2;
-    ctx.save();
-    ctx.globalAlpha = S.opacity / 100;
-    ctx.translate(cx, cy);
-    ctx.rotate(S.rot * Math.PI / 180);
-    ctx.scale(sc, sc);
-    ctx.translate(-cx, -cy);
-    if (S.shadow > 0) {
-      ctx.shadowColor   = `rgba(0,0,0,${Math.min(0.3+S.shadow*0.07,0.95)})`;
-      ctx.shadowBlur    = S.shadow * 12;
-      ctx.shadowOffsetY = S.shadow * 4;
-    }
-    ctx.drawImage(frameCv, fx * scale, fy * scale, frameCv.width, frameCv.height);
-    ctx.restore();
-    return cv;
-  }
 
   const userImg = await new Promise((res,rej) => {
     const i = new Image(); i.onload = ()=>res(i); i.onerror = rej; i.src = S.imgSrc;
@@ -579,7 +635,7 @@ async function ensureH2C() {
 async function doExport() {
   if (!S.imgSrc) { toast('upload a screenshot first'); return; }
   toast('rendering…');
-  if (S.imgSrc === 'code') await ensureH2C();
+  await ensureH2C();
   try {
     const cv   = await captureStage(S.res);
     const mime = { png:'image/png', jpg:'image/jpeg', webp:'image/webp' };
@@ -595,9 +651,9 @@ async function doExport() {
 async function doCopy() {
   if (!S.imgSrc) { toast('upload first'); return; }
   toast('copying…');
-  if (S.imgSrc === 'code') await ensureH2C();
+  await ensureH2C();
   try {
-    const cv = await captureStage(2);
+    const cv = await captureStage(S.res);
     cv.toBlob(async b => {
       try { await navigator.clipboard.write([new ClipboardItem({'image/png': b})]); toast('copied ⎘'); }
       catch { toast('clipboard not available'); }
@@ -616,6 +672,9 @@ function doReset() {
   document.getElementById('empty-state').style.display = 'flex';
   document.getElementById('mockup').style.display      = 'none';
   document.getElementById('cnv-bar').style.display     = 'none';
+  const stage = document.getElementById('ss-stage');
+  stage.style.padding = '0';
+  applyStageSize();
   toast('reset');
 }
 
@@ -703,19 +762,31 @@ function renderCodeSnippet() {
   const showFn   = document.getElementById('tog-filename').checked;
   const filename = document.getElementById('inp-code-filename').value;
 
-  document.getElementById('code-frame-filename').textContent    = filename;
-  document.getElementById('code-frame-filename').style.display  = showFn ? '' : 'none';
+  document.getElementById('code-frame-filename').textContent   = filename;
+  document.getElementById('code-frame-filename').style.display = showFn ? '' : 'none';
 
   const lines = code.split('\n');
+  // Trim only trailing blank lines, keep everything else including blank lines in middle
   while (lines.length > 1 && lines[lines.length - 1].trim() === '') lines.pop();
-  let lnHtml = '', codeHtml = '';
+
+  // Build table — one <tr> per line. This is the ONLY way to guarantee
+  // indentation is preserved regardless of browser HTML parsing quirks.
+  let rows = '';
   lines.forEach((ln, i) => {
-    lnHtml   += (i + 1) + '\n';
-    codeHtml += tokenizeLine(ln, lang) + '\n';
+    const tokenized = tokenizeLine(ln, lang);
+    // Protect leading whitespace: replace spaces at line start with &nbsp;
+    // so HTML rendering never collapses them even inside table cells
+    const safe = tokenized.replace(/^(\s+)/, m =>
+      m.replace(/ /g, '\u00a0').replace(/\t/g, '\u00a0\u00a0\u00a0\u00a0')
+    );
+    const lnCell = lineNos ? `<td class="ln-cell">${i + 1}</td>` : '';
+    // Empty lines need a non-breaking space to maintain row height
+    const codeContent = safe || '\u00a0';
+    rows += `<tr>${lnCell}<td class="code-cell">${codeContent}</td></tr>`;
   });
 
   document.getElementById('code-frame-body').innerHTML =
-    `<pre class="code-pre">${lineNos ? `<span class="ln-col">${lnHtml}</span>` : ''}<span class="code-col">${codeHtml}</span></pre>`;
+    `<table class="code-table"><tbody>${rows}</tbody></table>`;
 
   applyCodeTheme();
 }
@@ -750,6 +821,12 @@ function useCodeSnippet() {
   document.getElementById('mockup').style.display       = 'inline-flex';
   document.getElementById('cnv-bar').style.display      = 'flex';
   document.getElementById('hdr-file').textContent       = S.fileName;
+  // Code mode: shrink-wrap stage to frame content + padding (set by applySSBG)
+  const stage = document.getElementById('ss-stage');
+  stage.style.width     = 'auto';
+  stage.style.height    = 'auto';
+  stage.style.transform = 'none';
+  document.getElementById('hdr-size-badge').textContent = 'code snap';
   applyDevice(); applySSBG(); applyRadius(); applyShadow(); applyOpacity(); applyTransform();
   toast('code loaded ✓');
 }
