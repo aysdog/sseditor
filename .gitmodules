@@ -1,0 +1,3 @@
+[submodule "sseditor"]
+	path = sseditor
+	url = https://github.com/aysdog/sseditor

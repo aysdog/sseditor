@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>SS Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ───────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+
+/* ── Tokens ──────────────────────────────────────────── */
+:root{
+  --c0:#000;
+  --c1:#0e0e0e;
+  --c2:#161616;
+  --c3:#1f1f1f;
+  --b1:#1c1c1c;
+  --b2:#2a2a2a;
+  --b3:#383838;
+  --t0:#f0f0f0;
+  --t1:#a0a0a0;
+  --t2:#5a5a5a;
+  --g:#04D27F;
+  --gh:rgba(4,210,127,.12);
+  --mono:'JetBrains Mono',monospace;
+}
+
+body{
+  font-family:var(--mono);
+  font-size:12px;
+  font-weight:400;
+  color:var(--t0);
+  background:var(--c0);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ══════════════════════════════════════════════════════
+   TERMINAL BOOT
+══════════════════════════════════════════════════════ */
+#boot{
+  position:fixed;inset:0;
+  background:#000;
+  display:flex;align-items:center;justify-content:center;
+  z-index:999;
+}
+.tw{
+  width:min(640px,90vw);
+  border:1px solid var(--b2);
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 40px 80px rgba(0,0,0,.9);
+}
+.tw-bar{
+  background:var(--c2);
+  border-bottom:1px solid var(--b2);
+  padding:11px 16px;
+  display:flex;align-items:center;
+  position:relative;
+}
+.tw-dots{display:flex;gap:7px}
+.tw-dot{width:12px;height:12px;border-radius:50%}
+.tw-dot.r{background:#ff5f57}
+.tw-dot.y{background:#febc2e}
+.tw-dot.g{background:#28c840}
+.tw-ttl{
+  position:absolute;left:50%;transform:translateX(-50%);
+  font-size:11px;font-weight:600;color:var(--t2);
+  letter-spacing:.05em;pointer-events:none;
+}
+.tw-body{padding:22px 24px 26px;min-height:190px;background:var(--c1)}
+#tout{
+  font-size:13px;line-height:1.9;
+  white-space:pre-wrap;margin-bottom:14px;
+  color:#ccc;
+}
+#tout .d{color:var(--t2)}
+#tout .g{color:var(--g);font-weight:600}
+#tout .b{color:#fff;font-weight:700}
+#tout .f{color:#1e1e1e}
+.t-row{display:flex;align-items:center;font-size:13px}
+.t-pr{color:var(--t2);white-space:nowrap}
+.t-br{color:var(--g);font-weight:600}
+#ttyped{color:#eee}
+.t-cur{color:var(--g);animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ══════════════════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════════════════ */
+#app{
+  display:none;flex-direction:column;
+  height:100dvh;width:100dvw;overflow:hidden;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+.hdr{
+  height:48px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  border-bottom:1px solid var(--b1);
+  background:var(--c0);
+  gap:12px;
+}
+.hdr-l{display:flex;align-items:center;gap:12px;min-width:0}
+.hdr-c{flex:1;display:flex;justify-content:center}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+.logo{
+  font-size:12px;font-weight:700;
+  letter-spacing:.14em;color:#fff;
+  text-transform:uppercase;white-space:nowrap;
+}
+.logo-slash{color:var(--g)}
+.hdr-sep{color:var(--b2)}
+.hdr-file{
+  font-size:11px;color:var(--t2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;
+}
+.hdr-dims{
+  font-size:10px;font-weight:600;color:var(--t2);
+  letter-spacing:.06em;border:1px solid var(--b2);
+  padding:3px 10px;background:var(--c2);
+}
+
+/* Buttons */
+.btn{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.07em;padding:6px 14px;
+  cursor:pointer;border:1px solid;white-space:nowrap;
+  text-transform:lowercase;transition:all .12s;
+}
+.btn-ghost{background:var(--c2);border-color:var(--b2);color:var(--t2)}
+.btn-ghost:hover{border-color:var(--g);color:var(--g);background:var(--gh)}
+.btn-green{background:var(--g);border-color:var(--g);color:#000;font-weight:700}
+.btn-green:hover{background:#06e88c;border-color:#06e88c}
+
+/* ── Workspace ───────────────────────────────────────── */
+.ws{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* ══════════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════════ */
+.sb{
+  width:300px;flex-shrink:0;
+  border-right:1px solid var(--b1);
+  overflow-y:auto;overflow-x:hidden;
+  background:var(--c0);
+  scrollbar-width:thin;
+  scrollbar-color:var(--b2) transparent;
+}
+.sb::-webkit-scrollbar{width:3px}
+.sb::-webkit-scrollbar-thumb{background:var(--b2)}
+
+/* Panel */
+.pnl{border-bottom:1px solid var(--b1)}
+.pnl-hd{
+  padding:13px 20px 11px;
+  display:flex;align-items:center;gap:10px;
+  font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.18em;
+  color:var(--t2);
+}
+.pnl-num{color:var(--t2);font-weight:400;opacity:.5}
+.pnl-bd{padding:6px 20px 22px}
+
+/* Field label */
+.lbl{
+  display:block;margin-top:18px;margin-bottom:9px;
+  font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.14em;
+  color:var(--t1);
+}
+.lbl:first-child{margin-top:2px}
+.lbl-val{color:var(--g);font-weight:700;margin-left:4px}
+
+/* Upload zone */
+.up-zone{
+  display:flex;flex-direction:column;align-items:center;
+  gap:8px;padding:26px 16px;
+  border:1px dashed var(--b2);
+  background:var(--c1);cursor:pointer;
+  transition:all .15s;
+}
+.up-zone:hover{border-color:var(--g);background:var(--gh)}
+.up-zone:hover .up-ico,.up-zone:hover .up-txt{color:var(--g)}
+.up-ico{font-size:20px;color:var(--t2);transition:color .15s;line-height:1}
+.up-txt{font-size:12px;font-weight:600;color:var(--t0);transition:color .15s}
+.up-sub{font-size:9px;color:var(--t2);letter-spacing:.06em}
+
+/* Chip group */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  padding:6px 13px;cursor:pointer;
+  border:1px solid var(--b2);
+  border-radius:2px;
+  background:var(--c1);color:var(--t2);
+  text-transform:lowercase;letter-spacing:.03em;
+  transition:all .1s;white-space:nowrap;
+}
+.chip:hover{color:var(--t0);border-color:var(--b3);background:var(--c2)}
+.chip.on{
+  color:#000;background:var(--g);
+  border-color:var(--g);font-weight:700;
+}
+
+/* Text input */
+.inp{
+  display:block;width:100%;
+  background:var(--c1);border:1px solid var(--b2);
+  color:var(--t0);font-family:var(--mono);
+  font-size:11px;font-weight:400;
+  padding:8px 12px;outline:none;
+  transition:border-color .12s;
+}
+.inp:focus{border-color:var(--g)}
+
+/* Slider */
+.slider{
+  -webkit-appearance:none;appearance:none;
+  display:block;width:100%;
+  height:18px;
+  cursor:pointer;outline:none;
+  border:none;margin:4px 0 12px;
+  background:transparent;
+}
+.slider::-webkit-slider-runnable-track{
+  height:4px;border-radius:2px;
+  background:var(--b2);
+}
+.slider::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--g);border:2px solid #000;
+  box-shadow:0 0 0 2px var(--g);
+  cursor:pointer;
+  margin-top:-6px;
+}
+.slider::-moz-range-track{height:4px;border-radius:2px;background:var(--b2)}
+.slider::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;
+  background:var(--g);border:2px solid #000;
+  box-shadow:0 0 0 2px var(--g);
+  cursor:pointer;box-sizing:border-box;
+}
+.slider::-moz-range-progress{height:4px;border-radius:2px;background:var(--g)}
+
+/* Color row */
+.crow{display:flex;align-items:center;gap:10px;margin-top:4px}
+input[type=color]{
+  width:34px;height:34px;
+  border:1px solid var(--b2);
+  background:none;cursor:pointer;
+  padding:2px;flex-shrink:0;
+}
+.hex-inp{width:calc(100% - 44px)}
+
+/* Export btn */
+.exp-btn{
+  display:block;width:100%;margin-top:14px;
+  background:var(--g);color:#000;border:none;
+  font-family:var(--mono);font-size:12px;font-weight:700;
+  padding:11px;cursor:pointer;
+  letter-spacing:.06em;text-transform:lowercase;
+  transition:background .12s;
+}
+.exp-btn:hover{background:#06e88c}
+
+/* ══════════════════════════════════════════════════════
+   CANVAS
+══════════════════════════════════════════════════════ */
+.cnv{
+  flex:1;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;min-width:0;
+  background:#060606;
+  background-image:radial-gradient(circle,#232323 1.3px,transparent 1.3px);
+  background-size:26px 26px;
+}
+.cnv.drag-over{
+  background-image:radial-gradient(circle,#04D27F55 1.5px,transparent 1.5px)!important;
+}
+
+/* Empty state */
+.es{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;user-select:none;
+}
+.es-box{
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  pointer-events:all;
+}
+.es-ico{font-size:22px;color:var(--b2)}
+.es-ttl{font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.06em}
+.es-sub{font-size:10px;color:var(--t2)}
+.es-btn{
+  margin-top:2px;font-family:var(--mono);font-size:11px;font-weight:600;
+  padding:8px 22px;background:var(--c2);
+  border:1px solid var(--b2);color:var(--t2);
+  cursor:pointer;transition:all .12s;
+}
+.es-btn:hover{border-color:var(--g);color:var(--g);background:var(--gh)}
+
+/* Scene */
+.scene{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;overflow:auto;padding:40px;
+}
+.fw{
+  display:flex;flex-direction:column;align-items:center;
+  gap:14px;flex-shrink:0;position:relative;
+  transition:padding .2s,transform .3s;
+}
+
+/* ══════════════════════════════════════════════════════
+   DEVICE FRAMES
+══════════════════════════════════════════════════════ */
+
+/* Browser */
+.bf{
+  border:1px solid #2c2c2c;border-radius:10px 10px 4px 4px;
+  overflow:hidden;
+  box-shadow:0 2px 4px rgba(0,0,0,.8),0 20px 60px rgba(0,0,0,.9);
+  width:clamp(320px,66vw,900px);
+  transition:border-radius .2s,box-shadow .2s;
+}
+.bch{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #181818}
+.bch.dk{background:#1a1a1a}
+.bch.lt{background:#eeeeee}
+.bdots{display:flex;gap:6px;flex-shrink:0}
+.bd{width:11px;height:11px;border-radius:50%;display:block}
+.bd.r{background:#ff5f57}.bd.y{background:#febc2e}.bd.g{background:#28c840}
+.bbar{
+  flex:1;display:flex;align-items:center;gap:6px;
+  border-radius:4px;padding:4px 10px;
+  font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.bch.dk .bbar{background:rgba(255,255,255,.07);color:#666}
+.bch.lt .bbar{background:rgba(0,0,0,.08);color:#555}
+.burl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bacts{display:flex;gap:8px;font-size:13px;color:#555;flex-shrink:0}
+.bf .ssi{display:block;width:100%}
+
+/* Phone */
+.pf{
+  width:clamp(200px,22vw,280px);background:#111;
+  border:1px solid #2a2a2a;border-radius:44px;padding:14px;
+  box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.9);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:border-radius .2s;
+}
+.pnotch{display:flex;justify-content:center;align-items:center;width:88px;height:22px;background:#000;border-radius:0 0 14px 14px}
+.pcam{width:10px;height:10px;border-radius:50%;background:#1a1a1a;border:1px solid #222}
+.pscr{width:100%;border-radius:24px;overflow:hidden;background:#000}
+.pscr .ssi{display:block;width:100%}
+.pbar{width:60px;height:4px;background:#2a2a2a;border-radius:2px}
+
+/* Tablet */
+.tf{
+  width:clamp(280px,48vw,580px);background:#111;
+  border:1px solid #2a2a2a;border-radius:20px;padding:14px;
+  box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.9);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.ttop{display:flex;justify-content:center;padding:4px 0}
+.tcam{width:8px;height:8px;border-radius:50%;background:#1a1a1a;border:1px solid #222}
+.tscr{width:100%;border-radius:8px;overflow:hidden;background:#000}
+.tscr .ssi{display:block;width:100%}
+
+/* Terminal */
+.xf{
+  width:clamp(320px,68vw,860px);background:#1c1c1e;
+  border-radius:12px;overflow:hidden;border:1px solid #3a3a3c;
+  box-shadow:0 0 0 .5px #000,0 8px 24px rgba(0,0,0,.6),0 32px 80px rgba(0,0,0,.85);
+  transition:border-radius .2s,width .2s;
+}
+.xbar{
+  background:#2c2c2e;padding:11px 16px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid #3a3a3c;position:relative;
+}
+.xdots{display:flex;gap:7px;align-items:center;flex-shrink:0}
+.xd{width:12px;height:12px;border-radius:50%;display:block;flex-shrink:0}
+.xd.r{background:#ff5f57}.xd.y{background:#febc2e}.xd.g{background:#28c840}
+.xttl{
+  position:absolute;left:50%;transform:translateX(-50%);
+  font-size:11px;font-weight:600;color:#555;
+  white-space:nowrap;pointer-events:none;
+}
+.xspc{width:54px;flex-shrink:0}
+.xf .ssi{display:block;width:100%}
+
+/* Bare */
+.bare .ssi{
+  display:block;max-width:clamp(300px,66vw,900px);
+  border-radius:10px;
+  box-shadow:0 20px 60px rgba(0,0,0,.9);
+  transition:border-radius .2s,box-shadow .2s;
+}
+
+/* Caption / badge / watermark */
+.cap{font-size:11px;color:var(--t2);letter-spacing:.08em;text-align:center}
+.badge{position:absolute;top:-10px;right:-10px;font-size:9px;font-weight:700;letter-spacing:.12em;padding:3px 8px;background:var(--g);color:#000;pointer-events:none}
+.wm{font-size:9px;color:#272727;letter-spacing:.2em;text-transform:uppercase;text-align:center}
+
+/* Canvas toolbar */
+.ctbar{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  display:flex;background:var(--c2);border:1px solid var(--b2);z-index:10;
+}
+.ctbtn{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  padding:7px 16px;background:none;border:none;
+  border-right:1px solid var(--b1);
+  color:var(--t2);cursor:pointer;
+  transition:all .1s;letter-spacing:.04em;
+}
+.ctbtn:last-child{border-right:none}
+.ctbtn:hover{color:var(--g);background:var(--c3)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:22px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--g);color:#000;
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  padding:9px 20px;letter-spacing:.08em;text-transform:lowercase;
+  pointer-events:none;z-index:999;white-space:nowrap;
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Responsive */
+@media(max-width:900px){.sb{width:260px}}
+@media(max-width:640px){.sb{width:220px}.hdr-file,.hdr-sep,.hdr-dims{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ══ TERMINAL BOOT ══════════════════════════════════════ -->
+<div id="boot">
+  <div class="tw">
+    <div class="tw-bar">
+      <div class="tw-dots">
+        <span class="tw-dot r"></span>
+        <span class="tw-dot y"></span>
+        <span class="tw-dot g"></span>
+      </div>
+      <span class="tw-ttl">ss-editor — bash</span>
+    </div>
+    <div class="tw-body">
+      <div id="tout"></div>
+      <div class="t-row" id="trow">
+        <span class="t-pr">~/ss-editor&nbsp;<span class="t-br">main</span>&nbsp;❯&nbsp;</span>
+        <span id="ttyped"></span><span class="t-cur">█</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════ -->
+<div id="app">
+
+  <header class="hdr">
+    <div class="hdr-l">
+      <span class="logo">SS<span class="logo-slash">/</span>EDITOR</span>
+      <span class="hdr-sep">│</span>
+      <span class="hdr-file" id="hfile">no file loaded</span>
+    </div>
+    <div class="hdr-c">
+      <span class="hdr-dims" id="hdims"></span>
+    </div>
+    <div class="hdr-r">
+      <button class="btn btn-ghost" onclick="doCopy()">⎘ copy</button>
+      <button class="btn btn-ghost" onclick="doReset()">↺ reset</button>
+      <button class="btn btn-green" onclick="doExport()">↓ export</button>
+    </div>
+  </header>
+
+  <div class="ws">
+
+    <!-- ── SIDEBAR ───────────────────────────────────────── -->
+    <nav class="sb">
+
+      <!-- 01 Upload -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">01</span>upload</div>
+        <div class="pnl-bd">
+          <div class="up-zone" onclick="document.getElementById('fi').click()">
+            <span class="up-ico">↑</span>
+            <span class="up-txt">drop or click</span>
+            <span class="up-sub">ctrl+v to paste</span>
+          </div>
+          <input type="file" id="fi" accept="image/*" style="display:none">
+        </div>
+      </div>
+
+      <!-- 02 Device -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">02</span>device</div>
+        <div class="pnl-bd">
+          <span class="lbl">frame</span>
+          <div class="chips" id="dev-grp">
+            <button class="chip on"  onclick="setDev('browser',this)">browser</button>
+            <button class="chip"     onclick="setDev('terminal',this)">terminal</button>
+            <button class="chip"     onclick="setDev('phone',this)">phone</button>
+            <button class="chip"     onclick="setDev('tablet',this)">tablet</button>
+            <button class="chip"     onclick="setDev('bare',this)">bare</button>
+          </div>
+
+          <div id="opts-browser">
+            <span class="lbl">url</span>
+            <input class="inp" type="text" id="iurl" value="https://example.com" oninput="updURL()">
+            <span class="lbl">chrome</span>
+            <div class="chips" id="chr-grp">
+              <button class="chip on"  onclick="setChrome('dk',this)">dark</button>
+              <button class="chip"     onclick="setChrome('lt',this)">light</button>
+            </div>
+          </div>
+
+          <div id="opts-terminal" style="display:none">
+            <span class="lbl">title</span>
+            <input class="inp" type="text" id="ixtitle" value="bash — terminal" oninput="updXTitle()">
+            <span class="lbl">width</span>
+            <div class="chips" id="xw-grp">
+              <button class="chip on" onclick="setXW('860px',this)">full</button>
+              <button class="chip"    onclick="setXW('640px',this)">mid</button>
+              <button class="chip"    onclick="setXW('440px',this)">narrow</button>
+            </div>
+          </div>
+
+          <div id="opts-device" style="display:none">
+            <span class="lbl">viewport</span>
+            <div class="chips" id="vp-grp">
+              <button class="chip on" onclick="setVP('full',this)">full</button>
+              <button class="chip"    onclick="setVP('mid',this)">mid</button>
+              <button class="chip"    onclick="setVP('sm',this)">sm</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 Background -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">03</span>background</div>
+        <div class="pnl-bd">
+          <span class="lbl">screenshot bg</span>
+          <div class="chips" id="ibg-grp">
+            <button class="chip on" onclick="setIBGMode('none',this)">none</button>
+            <button class="chip"    onclick="setIBGMode('solid',this)">solid</button>
+            <button class="chip"    onclick="setIBGMode('gradient',this)">gradient</button>
+          </div>
+
+          <div id="ibg-solid" style="display:none">
+            <span class="lbl">color</span>
+            <div class="crow">
+              <input type="color" id="ibg-col" value="#0f172a" oninput="applyIBG()">
+              <input class="inp hex-inp" type="text" id="ibg-hex" value="#0f172a" oninput="onIBGHex(this.value)" maxlength="7">
+            </div>
+            <span class="lbl">presets</span>
+            <div class="chips">
+              <button class="chip" onclick="setIBGSolid('#000')">black</button>
+              <button class="chip" onclick="setIBGSolid('#fff')">white</button>
+              <button class="chip" onclick="setIBGSolid('#0f172a')">navy</button>
+              <button class="chip" onclick="setIBGSolid('#04D27F')">green</button>
+            </div>
+          </div>
+
+          <div id="ibg-grad" style="display:none">
+            <span class="lbl">preset</span>
+            <div class="chips" id="gp-grp">
+              <button class="chip on" onclick="setGP('dark',this)">dark</button>
+              <button class="chip"    onclick="setGP('ocean',this)">ocean</button>
+              <button class="chip"    onclick="setGP('forest',this)">forest</button>
+              <button class="chip"    onclick="setGP('custom',this)">custom</button>
+            </div>
+            <div id="gp-custom" style="display:none;margin-top:12px">
+              <span class="lbl">from</span>
+              <input type="color" id="gfrom" value="#000000" oninput="applyIBG()">
+              <span class="lbl">to</span>
+              <input type="color" id="gto"   value="#04D27F" oninput="applyIBG()">
+              <span class="lbl">angle <span class="lbl-val" id="gang-v">135</span>°</span>
+              <input class="slider" type="range" id="gang" min="0" max="360" value="135" oninput="document.getElementById('gang-v').textContent=this.value;applyIBG()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 04 Frame -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">04</span>frame</div>
+        <div class="pnl-bd">
+          <span class="lbl">padding <span class="lbl-val" id="v-pad">48</span></span>
+          <input class="slider" type="range" id="s-pad" min="0" max="120" value="48" oninput="document.getElementById('v-pad').textContent=this.value;document.getElementById('fw').style.padding=this.value+'px'">
+
+          <span class="lbl">radius <span class="lbl-val" id="v-rad">10</span></span>
+          <input class="slider" type="range" id="s-rad" min="0" max="32" value="10" oninput="updRadius(this.value)">
+
+          <span class="lbl">zoom <span class="lbl-val" id="v-zoom">100</span>%</span>
+          <input class="slider" type="range" id="s-zoom" min="30" max="100" value="100" oninput="updZoom(this.value)">
+        </div>
+      </div>
+
+      <!-- 05 Shadow -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">05</span>shadow</div>
+        <div class="pnl-bd">
+          <div class="chips" id="sh-grp">
+            <button class="chip on" onclick="setShadow('none',this)">none</button>
+            <button class="chip"    onclick="setShadow('soft',this)">soft</button>
+            <button class="chip"    onclick="setShadow('deep',this)">deep</button>
+            <button class="chip"    onclick="setShadow('glow',this)">glow</button>
+          </div>
+          <div id="glow-row" style="display:none">
+            <span class="lbl">glow color</span>
+            <input type="color" id="glow-col" value="#04D27F" oninput="applyGlow(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- 06 Effects -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">06</span>effects</div>
+        <div class="pnl-bd">
+          <span class="lbl">tilt <span class="lbl-val" id="v-tilt">0</span>°</span>
+          <input class="slider" type="range" id="s-tilt" min="-12" max="12" value="0" oninput="document.getElementById('v-tilt').textContent=this.value;applyXform()">
+
+          <span class="lbl">opacity <span class="lbl-val" id="v-op">100</span>%</span>
+          <input class="slider" type="range" id="s-op" min="20" max="100" value="100" oninput="document.getElementById('v-op').textContent=this.value;document.getElementById('fw').style.opacity=this.value/100">
+
+          <span class="lbl">perspective</span>
+          <div class="chips" id="persp-grp">
+            <button class="chip on" onclick="setPersp('flat',this)">flat</button>
+            <button class="chip"    onclick="setPersp('left',this)">← left</button>
+            <button class="chip"    onclick="setPersp('right',this)">right →</button>
+            <button class="chip"    onclick="setPersp('top',this)">↑ top</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 07 Labels -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">07</span>labels</div>
+        <div class="pnl-bd">
+          <span class="lbl">caption</span>
+          <input class="inp" type="text" id="i-cap" placeholder="add caption..." oninput="document.getElementById('cap').textContent=this.value">
+          <span class="lbl">badge</span>
+          <div class="chips" id="badge-grp">
+            <button class="chip on" onclick="setBadge('',this)">none</button>
+            <button class="chip"    onclick="setBadge('NEW',this)">new</button>
+            <button class="chip"    onclick="setBadge('BETA',this)">beta</button>
+            <button class="chip"    onclick="setBadge('LIVE',this)">live</button>
+          </div>
+          <span class="lbl">watermark</span>
+          <div class="chips" id="wm-grp">
+            <button class="chip"    onclick="setWM(true,this)">on</button>
+            <button class="chip on" onclick="setWM(false,this)">off</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 08 Export -->
+      <div class="pnl">
+        <div class="pnl-hd"><span class="pnl-num">08</span>export</div>
+        <div class="pnl-bd">
+          <span class="lbl">format</span>
+          <div class="chips" id="fmt-grp">
+            <button class="chip on" onclick="S.fmt='png';setOn('fmt-grp',this)">png</button>
+            <button class="chip"    onclick="S.fmt='jpg';setOn('fmt-grp',this)">jpg</button>
+            <button class="chip"    onclick="S.fmt='webp';setOn('fmt-grp',this)">webp</button>
+          </div>
+          <span class="lbl">resolution</span>
+          <div class="chips" id="res-grp">
+            <button class="chip"    onclick="S.res=1;setOn('res-grp',this)">1×</button>
+            <button class="chip on" onclick="S.res=2;setOn('res-grp',this)">2×</button>
+            <button class="chip"    onclick="S.res=3;setOn('res-grp',this)">3×</button>
+          </div>
+          <button class="exp-btn" onclick="doExport()">↓ export image</button>
+        </div>
+      </div>
+
+    </nav>
+
+    <!-- ── CANVAS ─────────────────────────────────────────── -->
+    <main class="cnv" id="cnv">
+
+      <div class="es" id="es">
+        <div class="es-box">
+          <span class="es-ico">⬡</span>
+          <p class="es-ttl">no screenshot loaded</p>
+          <p class="es-sub">drop · paste · click</p>
+          <button class="es-btn" onclick="document.getElementById('fi').click()">choose file</button>
+        </div>
+      </div>
+
+      <div class="scene" id="scene" style="display:none">
+        <div class="fw" id="fw" style="padding:48px">
+
+          <!-- Browser frame -->
+          <div class="bf" id="bframe">
+            <div class="bch dk" id="bch">
+              <div class="bdots"><span class="bd r"></span><span class="bd y"></span><span class="bd g"></span></div>
+              <div class="bbar"><span style="font-size:10px;color:#555">🔒</span><span class="burl" id="burl">https://example.com</span></div>
+              <div class="bacts"><span>⊕</span><span>⋮</span></div>
+            </div>
+            <img class="ssi" id="img-b" src="" alt="">
+          </div>
+
+          <!-- Phone frame -->
+          <div class="pf" id="pframe" style="display:none">
+            <div class="pnotch"><div class="pcam"></div></div>
+            <div class="pscr"><img class="ssi" id="img-p" src="" alt=""></div>
+            <div class="pbar"></div>
+          </div>
+
+          <!-- Tablet frame -->
+          <div class="tf" id="tframe" style="display:none">
+            <div class="ttop"><div class="tcam"></div></div>
+            <div class="tscr"><img class="ssi" id="img-t" src="" alt=""></div>
+          </div>
+
+          <!-- Terminal frame -->
+          <div class="xf" id="xframe" style="display:none">
+            <div class="xbar">
+              <div class="xdots"><span class="xd r"></span><span class="xd y"></span><span class="xd g"></span></div>
+              <span class="xttl" id="xttl">bash — terminal</span>
+              <div class="xspc"></div>
+            </div>
+            <img class="ssi" id="img-x" src="" alt="">
+          </div>
+
+          <!-- Bare frame -->
+          <div class="bare" id="bareframe" style="display:none">
+            <img class="ssi" id="img-bare" src="" alt="">
+          </div>
+
+          <div class="cap" id="cap"></div>
+          <div class="badge" id="badge" style="display:none"></div>
+          <div class="wm" id="wm" style="display:none">ss editor</div>
+        </div>
+      </div>
+
+      <div class="ctbar" id="ctbar" style="display:none">
+        <button class="ctbtn" onclick="document.getElementById('fi').click()">↑ replace</button>
+        <button class="ctbtn" onclick="zIn()">+</button>
+        <button class="ctbtn" onclick="zOut()">−</button>
+        <button class="ctbtn" onclick="zFit()">fit</button>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── State ─────────────────────────────────────── */
+const S={imgSrc:null,fmt:'png',res:2,shadow:'none',persp:'flat',ibgMode:'none',zoom:100};
+
+/* ── Terminal boot ──────────────────────────────── */
+const LINES=[
+  {t:0,   h:'<span class="d">initializing ss-editor v2.0.0...</span>'},
+  {t:200, h:'<span class="d">loading modules&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="f">............</span><span class="g"> ok</span>'},
+  {t:360, h:'<span class="d">canvas engine&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="f">............</span><span class="g"> ok</span>'},
+  {t:500, h:'<span class="d">export pipeline&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="f">............</span><span class="g"> ok</span>'},
+  {t:640, h:'<span class="d">device frames&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="f">............</span><span class="g"> ok</span>'},
+  {t:750, h:''},
+  {t:800, h:'<span class="b">SS EDITOR</span>  — screenshot mockup tool'},
+  {t:920, h:'<span class="d">type <span style="color:#fff">start</span> to launch</span>'},
+  {t:980, h:''},
+];
+
+const tout=document.getElementById('tout');
+const ttyped=document.getElementById('ttyped');
+let buf='', locked=false;
+
+(function boot(){
+  let i=0;
+  function nxt(){
+    if(i>=LINES.length){unlock();return}
+    const ln=LINES[i++];
+    setTimeout(()=>{
+      if(ln.h!==''){const d=document.createElement('div');d.innerHTML=ln.h;tout.appendChild(d)}
+      else tout.appendChild(document.createElement('br'));
+      nxt();
+    },i===1?0:ln.t-LINES[i-2].t);
+  }
+  nxt();
+})();
+
+function unlock(){
+  locked=false;
+  document.addEventListener('keydown',onKey);
+}
+
+function onKey(e){
+  if(e.key==='Enter'){
+    const cmd=buf.trim().toLowerCase();
+    ttyped.textContent='';buf='';
+    const echo=document.createElement('div');
+    echo.innerHTML=`<span class="d">~/ss-editor <span class="g">main</span> ❯</span> ${cmd}`;
+    tout.appendChild(echo);
+    if(cmd==='start'){
+      const m=document.createElement('div');m.innerHTML='<span class="g">launching...</span>';tout.appendChild(m);
+      setTimeout(launch,400);
+    } else if(cmd==='clear'){tout.innerHTML=''}
+    else if(cmd!==''){
+      const m=document.createElement('div');m.innerHTML=`<span class="d">not found: ${cmd} — try <span style="color:#fff">start</span></span>`;tout.appendChild(m);
+    }
+  } else if(e.key==='Backspace'){buf=buf.slice(0,-1);ttyped.textContent=buf}
+  else if(e.key.length===1){buf+=e.key;ttyped.textContent=buf}
+}
+
+function launch(){
+  document.removeEventListener('keydown',onKey);
+  const bt=document.getElementById('boot');
+  bt.style.transition='opacity .3s';bt.style.opacity='0';
+  setTimeout(()=>{
+    bt.style.display='none';
+    const app=document.getElementById('app');
+    app.style.display='flex';app.style.opacity='0';app.style.transition='opacity .3s';
+    requestAnimationFrame(()=>{
+      app.style.opacity='1';
+      setTimeout(initSliders,60);
+    });
+  },320);
+}
+
+/* ── File handling ──────────────────────────────── */
+document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])loadImg(e.target.files[0])});
+document.addEventListener('paste',e=>{for(const it of e.clipboardData.items)if(it.type.startsWith('image')){loadImg(it.getAsFile());break}});
+const cnv=document.getElementById('cnv');
+cnv.addEventListener('dragover',e=>{e.preventDefault();cnv.classList.add('drag-over')});
+cnv.addEventListener('dragleave',()=>cnv.classList.remove('drag-over'));
+cnv.addEventListener('drop',e=>{e.preventDefault();cnv.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image'))loadImg(f)});
+
+function loadImg(file){
+  const r=new FileReader();
+  r.onload=e=>{
+    S.imgSrc=e.target.result;
+    ['img-b','img-p','img-t','img-x','img-bare'].forEach(id=>{const el=document.getElementById(id);if(el)el.src=S.imgSrc});
+    document.getElementById('hfile').textContent=file.name;
+    const img=new Image();img.onload=()=>document.getElementById('hdims').textContent=img.width+' × '+img.height;img.src=S.imgSrc;
+    document.getElementById('es').style.display='none';
+    document.getElementById('scene').style.display='flex';
+    document.getElementById('ctbar').style.display='flex';
+  };
+  r.readAsDataURL(file);
+}
+
+/* ── Device ─────────────────────────────────────── */
+function setDev(v,btn){
+  setOn('dev-grp',btn);
+  document.getElementById('bframe').style.display   =v==='browser'  ?'block':'none';
+  document.getElementById('xframe').style.display   =v==='terminal' ?'block':'none';
+  document.getElementById('pframe').style.display   =v==='phone'    ?'flex' :'none';
+  document.getElementById('tframe').style.display   =v==='tablet'   ?'flex' :'none';
+  document.getElementById('bareframe').style.display=v==='bare'     ?'block':'none';
+  document.getElementById('opts-browser').style.display  =v==='browser'            ?'block':'none';
+  document.getElementById('opts-terminal').style.display =v==='terminal'           ?'block':'none';
+  document.getElementById('opts-device').style.display   =(v==='phone'||v==='tablet')?'block':'none';
+}
+function updURL(){document.getElementById('burl').textContent=document.getElementById('iurl').value}
+function setChrome(t,btn){setOn('chr-grp',btn);document.getElementById('bch').className='bch '+t}
+function updXTitle(){document.getElementById('xttl').textContent=document.getElementById('ixtitle').value}
+function setXW(w,btn){setOn('xw-grp',btn);document.getElementById('xframe').style.width=w}
+function setVP(v,btn){setOn('vp-grp',btn)}
+
+/* ── Background ─────────────────────────────────── */
+const GP={dark:{f:'#0d0d0d',t:'#1a1a2e',a:135},ocean:{f:'#0a1628',t:'#0d4f6b',a:145},forest:{f:'#0a1f0a',t:'#1a4a1a',a:135}};
+let ibgMode='none';
+
+function setIBGMode(m,btn){
+  ibgMode=m;setOn('ibg-grp',btn);
+  document.getElementById('ibg-solid').style.display=m==='solid'   ?'block':'none';
+  document.getElementById('ibg-grad').style.display =m==='gradient'?'block':'none';
+  applyIBG();
+}
+function applyIBG(){
+  let bg='';
+  if(ibgMode==='solid')bg=document.getElementById('ibg-col').value;
+  else if(ibgMode==='gradient'){
+    const f=document.getElementById('gfrom').value,t=document.getElementById('gto').value,a=document.getElementById('gang').value;
+    bg=`linear-gradient(${a}deg,${f},${t})`;
+  }
+  ['img-b','img-p','img-t','img-x','img-bare'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.background=bg});
+}
+function setIBGSolid(c){document.getElementById('ibg-col').value=c;document.getElementById('ibg-hex').value=c;applyIBG()}
+function onIBGHex(v){if(/^#[0-9a-f]{6}$/i.test(v)){document.getElementById('ibg-col').value=v;applyIBG()}}
+function setGP(n,btn){
+  setOn('gp-grp',btn);
+  document.getElementById('gp-custom').style.display=n==='custom'?'block':'none';
+  if(GP[n]){document.getElementById('gfrom').value=GP[n].f;document.getElementById('gto').value=GP[n].t;document.getElementById('gang').value=GP[n].a;document.getElementById('gang-v').textContent=GP[n].a}
+  applyIBG();
+}
+
+/* ── Frame ──────────────────────────────────────── */
+function updRadius(v){
+  document.getElementById('v-rad').textContent=v;
+  document.getElementById('bframe').style.borderRadius=v+'px '+v+'px 4px 4px';
+  document.getElementById('bareframe').querySelector('.ssi').style.borderRadius=v+'px';
+  document.getElementById('pframe').style.borderRadius=Math.max(+v*3,20)+'px';
+  document.getElementById('tframe').style.borderRadius=v+'px';
+}
+function updZoom(v){S.zoom=+v;document.getElementById('v-zoom').textContent=v;applyXform()}
+function zIn(){S.zoom=Math.min(S.zoom+10,150);const s=document.getElementById('s-zoom');s.value=Math.min(S.zoom,100);document.getElementById('v-zoom').textContent=S.zoom;fillSlider(s);applyXform()}
+function zOut(){S.zoom=Math.max(S.zoom-10,20);const s=document.getElementById('s-zoom');s.value=Math.max(S.zoom,30);document.getElementById('v-zoom').textContent=S.zoom;fillSlider(s);applyXform()}
+function zFit(){S.zoom=100;const s=document.getElementById('s-zoom');s.value=100;document.getElementById('v-zoom').textContent=100;fillSlider(s);applyXform()}
+
+/* ── Transform ──────────────────────────────────── */
+function applyXform(){
+  const tilt=document.getElementById('s-tilt').value;
+  const pmap={flat:'',left:'perspective(1200px) rotateY(12deg)',right:'perspective(1200px) rotateY(-12deg)',top:'perspective(1200px) rotateX(10deg)'};
+  document.getElementById('fw').style.transform=`${pmap[S.persp]||''} rotate(${tilt}deg) scale(${S.zoom/100})`;
+}
+function setPersp(v,btn){S.persp=v;setOn('persp-grp',btn);applyXform()}
+
+/* ── Shadow ─────────────────────────────────────── */
+const SH={none:'',soft:'0 8px 32px rgba(0,0,0,.7)',deep:'0 30px 80px rgba(0,0,0,.95),0 8px 20px rgba(0,0,0,.7)',glow:''};
+function setShadow(t,btn){
+  S.shadow=t;setOn('sh-grp',btn);
+  document.getElementById('glow-row').style.display=t==='glow'?'block':'none';
+  const val=t==='glow'?`0 0 40px ${document.getElementById('glow-col').value}55,0 0 80px ${document.getElementById('glow-col').value}22`:SH[t];
+  ['bframe','pframe','tframe'].forEach(id=>document.getElementById(id).style.boxShadow=val);
+  const bi=document.querySelector('.bare .ssi');if(bi)bi.style.boxShadow=val;
+}
+function applyGlow(c){if(S.shadow==='glow')setShadow('glow',null)}
+
+/* ── Labels ─────────────────────────────────────── */
+function setBadge(v,btn){
+  setOn('badge-grp',btn);
+  const el=document.getElementById('badge');
+  if(!v){el.style.display='none';return}
+  el.textContent=v;el.style.display='block';
+}
+function setWM(on,btn){setOn('wm-grp',btn);document.getElementById('wm').style.display=on?'block':'none'}
+
+/* ── Export ─────────────────────────────────────── */
+async function loadH2C(){
+  if(window.html2canvas)return;
+  await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+}
+async function doExport(){
+  if(!S.imgSrc){showToast('upload a screenshot first');return}
+  showToast('exporting…');await loadH2C();
+  const mime={png:'image/png',jpg:'image/jpeg',webp:'image/webp'};
+  const cv=await html2canvas(document.getElementById('fw'),{backgroundColor:null,scale:S.res,useCORS:true,allowTaint:true,logging:false});
+  const a=document.createElement('a');a.download=`screenshot.${S.fmt}`;a.href=cv.toDataURL(mime[S.fmt],.95);a.click();
+  showToast('exported ↓');
+}
+async function doCopy(){
+  if(!S.imgSrc){showToast('upload first');return}
+  await loadH2C();
+  const cv=await html2canvas(document.getElementById('fw'),{backgroundColor:null,scale:2,useCORS:true,allowTaint:true,logging:false});
+  cv.toBlob(async b=>{try{await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);showToast('copied ⎘')}catch{showToast('copy not supported')}});
+}
+function doReset(){
+  S.imgSrc=null;document.getElementById('fi').value='';
+  ['img-b','img-p','img-t','img-x','img-bare'].forEach(id=>{const el=document.getElementById(id);if(el)el.src=''});
+  document.getElementById('hfile').textContent='no file loaded';
+  document.getElementById('hdims').textContent='';
+  document.getElementById('es').style.display='flex';
+  document.getElementById('scene').style.display='none';
+  document.getElementById('ctbar').style.display='none';
+  showToast('reset');
+}
+
+/* ── Utils ──────────────────────────────────────── */
+function setOn(gid,btn){
+  document.getElementById(gid)?.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  btn?.classList.add('on');
+}
+function showToast(m){
+  const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+/* ── Sliders ────────────────────────────────────── */
+function fillSlider(el){
+  const min=parseFloat(el.min)||0,max=parseFloat(el.max)||100;
+  const pct=((parseFloat(el.value)-min)/(max-min))*100;
+  el.style.background=`linear-gradient(to right,#04D27F ${pct}%,#2a2a2a ${pct}%)`;
+}
+function initSliders(){
+  document.querySelectorAll('.slider').forEach(r=>{fillSlider(r);r.addEventListener('input',()=>fillSlider(r))});
+}
+document.addEventListener('DOMContentLoaded',initSliders);
+</script>
+</body>
+</html>
