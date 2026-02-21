@@ -144,12 +144,13 @@ input[type=range].sl-dark::-moz-range-thumb{background:#4a4a4a}
 .url-inp:focus{border-color:#444}
 
 /* Color presets */
-.color-presets{display:flex;gap:6px;align-items:center;padding:2px 0 4px;position:relative}
-.color-preset{width:32px;height:32px;border-radius:8px;border:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;position:relative}
-.color-preset:hover{transform:scale(1.07)}
-.color-preset.on{border-color:#d8d8d8;box-shadow:0 0 0 1px #d8d8d8}
-.color-preset[style*="#ffffff"].on,.color-preset[style*="#fff"].on{border-color:#999;box-shadow:0 0 0 1px #999}
-.color-preset-custom{background:conic-gradient(#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000)!important;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.85)}
+/* Color palette grid */
+.color-palette{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;padding:4px 0 8px}
+.cp{width:100%;aspect-ratio:1;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:transform .12s,border-color .12s,box-shadow .12s;padding:0;flex-shrink:0;position:relative}
+.cp:hover{transform:scale(1.1);z-index:1}
+.cp.on{border-color:#d8d8d8;box-shadow:0 0 0 1px #d8d8d8}
+.cp[style*="#ffffff"].on,.cp[style*="#f5f5f5"].on,.cp[style*="#e8e8e8"].on,.cp[style*="#d0d0d0"].on{border-color:#888;box-shadow:0 0 0 1px #888}
+.cp-custom{background:conic-gradient(#ff0000,#ff8800,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000)!important;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9)}
 
 /* Gradient presets */
 .grad-presets{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:4px}
@@ -222,11 +223,12 @@ input[type=color]{width:100%;height:100%;border:none;background:none;cursor:poin
 #mockup{display:inline-flex;flex-direction:column;align-items:center;gap:12px;position:relative;flex-shrink:0;transform-origin:center center}
 
 /* empty state */
-.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
-.empty-box{pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:12px;border:1.5px dashed #252525;border-radius:14px;padding:40px 44px;background:rgba(255,255,255,.008)}
-.empty-ttl{font-size:13px;font-weight:600;color:#555}
-.empty-sub{font-size:11px;color:#2e2e2e;font-family:var(--mono);letter-spacing:.02em}
-.empty-btn{font-family:var(--sans);font-size:11px;font-weight:600;padding:8px 20px;background:var(--panel);border:1px solid var(--border2);color:#666;cursor:pointer;border-radius:var(--r-sm);transition:all .15s;margin-top:2px}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:20}
+.empty-box{pointer-events:all;display:flex;flex-direction:column;align-items:center;gap:14px;border:1.5px dashed #2a2a2a;border-radius:16px;padding:52px 64px;background:rgba(255,255,255,.006);cursor:pointer;transition:border-color .15s,background .15s}
+.empty-box:hover{border-color:#404040;background:rgba(255,255,255,.018)}
+.empty-ttl{font-size:15px;font-weight:600;color:#606060;pointer-events:none}
+.empty-sub{font-size:11px;color:#2e2e2e;font-family:var(--mono);letter-spacing:.02em;pointer-events:none}
+.empty-btn{font-family:var(--sans);font-size:11px;font-weight:600;padding:8px 22px;background:var(--panel);border:1px solid var(--border2);color:#666;cursor:pointer;border-radius:var(--r-sm);transition:all .15s;margin-top:2px}
 .empty-btn:hover{border-color:#555;color:#bbb;background:var(--panel2)}
 
 /* DEVICE FRAMES */
@@ -313,9 +315,9 @@ input[type=color]{width:100%;height:100%;border:none;background:none;cursor:poin
 .code-theme-monokai .code-frame-body{background:#272822}
 
 /* Syntax highlighted code block */
-.code-pre{margin:0;padding:18px 20px;font-family:var(--mono);font-size:13px;line-height:1.8;overflow-x:auto;display:flex;gap:0}
-.code-pre .ln-col{user-select:none;padding-right:20px;min-width:38px;text-align:right;opacity:.3;font-size:12px}
-.code-pre .code-col{flex:1}
+.code-pre{margin:0;padding:18px 20px;font-family:var(--mono);font-size:13px;line-height:1.8;overflow-x:auto;display:flex;gap:0;white-space:pre}
+.code-pre .ln-col{user-select:none;padding-right:20px;min-width:38px;text-align:right;opacity:.3;font-size:12px;white-space:pre;flex-shrink:0}
+.code-pre .code-col{flex:1;white-space:pre}
 
 /* Syntax token colors — dark themes */
 .code-theme-dark .tok-kw,.code-theme-midnight .tok-kw,.code-theme-monokai .tok-kw{color:#cc99cd}

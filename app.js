@@ -9,24 +9,21 @@ const S = {
 
 const BOOT_LINES = [
   { t: 0,   h: '<span class="d">initializing ss-editor v2.0.0...</span>' },
-  { t: 200, h: '<span class="d">loading modules      </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 360, h: '<span class="d">canvas engine        </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 500, h: '<span class="d">export pipeline      </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 640, h: '<span class="d">device frames        </span><span class="f">............</span><span class="g"> ok</span>' },
-  { t: 750, h: '' },
-  { t: 800, h: '<span class="b">SS EDITOR</span>  — screenshot mockup tool' },
-  { t: 920, h: '<span class="d">type <span style="color:#e0e0e0">start</span> to launch</span>' },
-  { t: 980, h: '' },
+  { t: 160, h: '<span class="d">loading modules      </span><span class="f">............</span><span class="g"> ok</span>' },
+  { t: 290, h: '<span class="d">canvas engine        </span><span class="f">............</span><span class="g"> ok</span>' },
+  { t: 400, h: '<span class="d">export pipeline      </span><span class="f">............</span><span class="g"> ok</span>' },
+  { t: 490, h: '<span class="d">device frames        </span><span class="f">............</span><span class="g"> ok</span>' },
+  { t: 570, h: '' },
+  { t: 610, h: '<span class="b">SS EDITOR</span>  — screenshot mockup tool' },
 ];
 
-let typedBuffer = '';
-const bootOut = document.getElementById('boot-out');
+const bootOut   = document.getElementById('boot-out');
 const bootTyped = document.getElementById('boot-typed');
 
 (function runBoot() {
   let i = 0;
   function next() {
-    if (i >= BOOT_LINES.length) { document.addEventListener('keydown', handleBootKey); return; }
+    if (i >= BOOT_LINES.length) { setTimeout(launch, 300); return; }
     const line = BOOT_LINES[i++];
     setTimeout(() => {
       if (line.h !== '') { const d = document.createElement('div'); d.innerHTML = line.h; bootOut.appendChild(d); }
@@ -36,30 +33,6 @@ const bootTyped = document.getElementById('boot-typed');
   }
   next();
 })();
-
-function handleBootKey(e) {
-  if (e.key === 'Enter') {
-    const cmd = typedBuffer.trim().toLowerCase();
-    bootTyped.textContent = ''; typedBuffer = '';
-    if (cmd === 'start' || cmd === '') {
-      document.removeEventListener('keydown', handleBootKey);
-      const d = document.createElement('div');
-      d.innerHTML = '<span style="color:#04D27F">launching...</span>';
-      bootOut.appendChild(d);
-      setTimeout(launch, 360);
-    } else {
-      const d = document.createElement('div');
-      d.innerHTML = `<span style="color:#283828">command not found: ${cmd}</span>`;
-      bootOut.appendChild(d);
-    }
-  } else if (e.key === 'Backspace') {
-    typedBuffer = typedBuffer.slice(0, -1);
-    bootTyped.textContent = typedBuffer;
-  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-    typedBuffer += e.key;
-    bootTyped.textContent = typedBuffer;
-  }
-}
 
 function launch() {
   const boot = document.getElementById('boot');
@@ -315,7 +288,7 @@ function applySSBG() {
 function setSSBGPreset(c, el) {
   S.ssBGColor = c;
   document.getElementById('ssbg-color').value = c;
-  document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.cp').forEach(p => p.classList.remove('on'));
   if (el) el.classList.add('on');
   document.querySelectorAll('#g-ssbg .bg-tab').forEach(t => t.classList.remove('on'));
   document.querySelector('#g-ssbg [data-v="solid"]').classList.add('on');
@@ -327,11 +300,12 @@ function setSSBGPreset(c, el) {
 
 function setSSBGCustom(c) {
   S.ssBGColor = c;
-  document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('on'));
-  const btn = document.querySelector('.color-preset-custom');
+  document.querySelectorAll('.cp').forEach(p => p.classList.remove('on'));
+  const btn = document.querySelector('.cp-custom');
   if (btn) { btn.classList.add('on'); btn.style.background = c; }
   applySSBG();
 }
+  applySSBG();
 
 function pickGradPreset(el) {
   document.querySelectorAll('.grad-swatch').forEach(s => s.classList.remove('on'));
@@ -444,7 +418,39 @@ async function captureStage(scale) {
     ctx.fillRect(0,0,S.stageW,S.stageH);
   }
 
-  if (!S.imgSrc || S.imgSrc === 'code' || !frameEl) return cv;
+  if (!S.imgSrc || !frameEl) return cv;
+
+  if (S.imgSrc === 'code') {
+    const mockup  = document.getElementById('mockup');
+    const savedMT = mockup ? mockup.style.transform : '';
+    if (mockup) mockup.style.transform = 'none';
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const frameCv = await html2canvas(frameEl, {
+      backgroundColor: null, scale, useCORS: true, allowTaint: true, logging: false,
+    });
+    if (mockup) mockup.style.transform = savedMT;
+    const sc = S.scale / 100;
+    const cx = S.stageW / 2 + S.hpos;
+    const cy = S.stageH / 2 + S.vpos;
+    const fw = frameCv.width  / scale;
+    const fh = frameCv.height / scale;
+    const fx = cx - fw / 2;
+    const fy = cy - fh / 2;
+    ctx.save();
+    ctx.globalAlpha = S.opacity / 100;
+    ctx.translate(cx, cy);
+    ctx.rotate(S.rot * Math.PI / 180);
+    ctx.scale(sc, sc);
+    ctx.translate(-cx, -cy);
+    if (S.shadow > 0) {
+      ctx.shadowColor   = `rgba(0,0,0,${Math.min(0.3+S.shadow*0.07,0.95)})`;
+      ctx.shadowBlur    = S.shadow * 12;
+      ctx.shadowOffsetY = S.shadow * 4;
+    }
+    ctx.drawImage(frameCv, fx * scale, fy * scale, frameCv.width, frameCv.height);
+    ctx.restore();
+    return cv;
+  }
 
   const userImg = await new Promise((res,rej) => {
     const i = new Image(); i.onload = ()=>res(i); i.onerror = rej; i.src = S.imgSrc;
@@ -560,9 +566,20 @@ async function captureStage(scale) {
   return cv;
 }
 
+async function ensureH2C() {
+  if (window.html2canvas) return;
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
 async function doExport() {
   if (!S.imgSrc) { toast('upload a screenshot first'); return; }
   toast('rendering…');
+  if (S.imgSrc === 'code') await ensureH2C();
   try {
     const cv   = await captureStage(S.res);
     const mime = { png:'image/png', jpg:'image/jpeg', webp:'image/webp' };
@@ -578,6 +595,7 @@ async function doExport() {
 async function doCopy() {
   if (!S.imgSrc) { toast('upload first'); return; }
   toast('copying…');
+  if (S.imgSrc === 'code') await ensureH2C();
   try {
     const cv = await captureStage(2);
     cv.toBlob(async b => {
@@ -689,6 +707,7 @@ function renderCodeSnippet() {
   document.getElementById('code-frame-filename').style.display  = showFn ? '' : 'none';
 
   const lines = code.split('\n');
+  while (lines.length > 1 && lines[lines.length - 1].trim() === '') lines.pop();
   let lnHtml = '', codeHtml = '';
   lines.forEach((ln, i) => {
     lnHtml   += (i + 1) + '\n';
