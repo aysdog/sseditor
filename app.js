@@ -10,14 +10,12 @@ const S = {
 const BOOT_LINES = [
   { t: 0,    h: '<span class="d">ss-editor v3.0 — booting...</span>' },
   { t: 320,  h: '<span class="d">checking environment    </span><span class="f">........</span><span class="g"> ok</span>' },
-  { t: 600,  h: '<span class="d">loading font assets     </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 600,  h: '<span class="d">loading from aysdog     </span><span class="f">........</span><span class="g"> ok</span>' },
   { t: 850,  h: '<span class="d">init canvas engine      </span><span class="f">........</span><span class="g"> ok</span>' },
   { t: 1080, h: '<span class="d">mounting device frames  </span><span class="f">........</span><span class="g"> ok</span>' },
-  { t: 1280, h: '<span class="d">wiring export pipeline  </span><span class="f">........</span><span class="g"> ok</span>' },
-  { t: 1460, h: '<span class="d">loading syntax engine   </span><span class="f">........</span><span class="g"> ok</span>' },
-  { t: 1620, h: '<span class="d">setting up stage        </span><span class="f">........</span><span class="g"> ok</span>' },
+  { t: 1620, h: '<span class="d">setting up ss editor    </span><span class="f">........</span><span class="g"> ok</span>' },
   { t: 1760, h: '' },
-  { t: 1860, h: '<span class="b">SS EDITOR</span>  <span class="d">— screenshot mockup tool  v3.0</span>' },
+  { t: 1860, h: '<span class="b">ss editor</span>  <span class="d">— screenshot mockup tool  v3.0</span>' },
   { t: 2100, h: '' },
   { t: 2200, h: '<span class="d">ready. drop a screenshot or paste code to begin.</span>' },
 ];
