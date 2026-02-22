@@ -91,23 +91,11 @@
               </div>
             </div>
             <div id="device-thumbs" style="display:none">
-              <div class="frame-thumbs">
-                <div class="frame-thumb on" onclick="pickDevice('phone',this)">
-                  <div class="frame-thumb-inner">
-                    <div class="ft-phone-wrap"><div class="ft-phone-body"><div class="ft-phone-notch"></div><div class="ft-phone-screen"></div><div class="ft-phone-btn"></div></div></div>
-                  </div>
-                </div>
-                <div class="frame-thumb" onclick="pickDevice('tablet',this)">
-                  <div class="frame-thumb-inner">
-                    <div class="ft-tablet-wrap"><div class="ft-tablet-body"><div class="ft-tablet-screen"></div></div></div>
-                  </div>
-                </div>
-              </div>
               <div class="frame-thumbs" style="grid-template-columns:1fr;margin-top:0">
                 <div class="frame-thumb" onclick="pickDevice('terminal',this)">
                   <div class="frame-thumb-inner" style="padding:7px 8px 6px">
                     <div class="ft-bar tm"><span class="ft-dot r"></span><span class="ft-dot y"></span><span class="ft-dot g"></span><span class="ft-addr"></span></div>
-                    <div class="ft-screen" style="background:#0a1a0a;height:20px"></div>
+                    <div class="ft-screen" style="background:#3d3d3d;height:20px"></div>
                   </div>
                 </div>
               </div>
@@ -165,8 +153,6 @@
               <span class="sz-chip" data-w="1280" data-h="800">1280×800</span>
               <span class="sz-chip" data-w="1500" data-h="500">𝕏 Header</span>
               <span class="sz-chip" data-w="2560" data-h="1440">2560×1440</span>
-              <span class="sz-chip" data-w="1080" data-h="1080">1080×1080</span>
-              <span class="sz-chip" data-w="1080" data-h="1920">9:16</span>
               <span class="sz-chip" data-w="0" data-h="0">Custom</span>
             </div>
             <div class="size-custom" id="size-custom" style="display:none">
@@ -187,20 +173,8 @@
                 <button class="color-preset on" onclick="setSSBGPreset('#111111',this)" style="background:#111111" title="#111111"></button>
                 <button class="color-preset" onclick="setSSBGPreset('#000000',this)" style="background:#000000" title="#000000"></button>
                 <button class="color-preset" onclick="setSSBGPreset('#1c1c1e',this)" style="background:#1c1c1e" title="#1c1c1e"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#2a2a2a',this)" style="background:#2a2a2a" title="#2a2a2a"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#3d3d3d',this)" style="background:#3d3d3d" title="#3d3d3d"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#666666',this)" style="background:#666666" title="#666666"></button>
                 <button class="color-preset" onclick="setSSBGPreset('#ffffff',this)" style="background:#ffffff" title="#ffffff"></button>
                 <button class="color-preset" onclick="setSSBGPreset('#f5f5f5',this)" style="background:#f5f5f5" title="#f5f5f5"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#e8e8e8',this)" style="background:#e8e8e8" title="#e8e8e8"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#d0d0d0',this)" style="background:#d0d0d0" title="#d0d0d0"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#aaaaaa',this)" style="background:#aaaaaa" title="#aaaaaa"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#888888',this)" style="background:#888888" title="#888888"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#0d1f0d',this)" style="background:#0d1f0d" title="terminal"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#1a1a2e',this)" style="background:#1a1a2e" title="midnight"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#1e0a3c',this)" style="background:#1e0a3c" title="purple"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#1c0a0a',this)" style="background:#1c0a0a" title="red"></button>
-                <button class="color-preset" onclick="setSSBGPreset('#0a1628',this)" style="background:#0a1628" title="ocean"></button>
                 <button class="color-preset color-preset-custom" onclick="document.getElementById('ssbg-color').click()" title="custom">
                   <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 2v12M2 8h12"/></svg>
                 </button>
@@ -254,12 +228,6 @@
             <div class="sl-row"><input type="range" id="sl-rad" min="0" max="40" value="10"><button class="sl-reset" onclick="resetSl('sl-rad','lv-rad',10,'applyRadius')">↺</button></div>
             <div class="field-row"><span class="field-label">Shadow</span><span class="sl-vbox" id="lv-shadow">4</span></div>
             <div class="sl-row"><input type="range" id="sl-shadow" min="0" max="10" value="4"><button class="sl-reset" onclick="resetSl('sl-shadow','lv-shadow',4,'applyShadow')">↺</button></div>
-            <div class="field-row"><span class="field-label">Vertical Tilt</span><span class="sl-vbox" id="lv-vtilt">0</span></div>
-            <div class="sl-row"><input type="range" class="sl-grey" id="sl-vtilt" min="-20" max="20" value="0"><button class="sl-reset" onclick="resetSl('sl-vtilt','lv-vtilt',0,'applyTransform')">↺</button></div>
-            <div class="field-row"><span class="field-label">Horizontal Tilt</span><span class="sl-vbox" id="lv-htilt">0</span></div>
-            <div class="sl-row"><input type="range" class="sl-grey" id="sl-htilt" min="-20" max="20" value="0"><button class="sl-reset" onclick="resetSl('sl-htilt','lv-htilt',0,'applyTransform')">↺</button></div>
-            <div class="field-row"><span class="field-label">Rotation</span><span class="sl-vbox" id="lv-rot">0</span></div>
-            <div class="sl-row"><input type="range" class="sl-dark" id="sl-rot" min="-15" max="15" value="0"><button class="sl-reset" onclick="resetSl('sl-rot','lv-rot',0,'applyTransform')">↺</button></div>
             <div class="field-row"><span class="field-label">Opacity</span><span class="sl-vbox" id="lv-op">100</span></div>
             <div class="sl-row"><input type="range" class="sl-dark" id="sl-op" min="10" max="100" value="100"><button class="sl-reset" onclick="resetSl('sl-op','lv-op',100,'applyOpacity')">↺</button></div>
           </div>

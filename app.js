@@ -94,7 +94,7 @@ function initSegGroups() {
     S.devtype = v;
     document.getElementById('browser-thumbs').style.display = v === 'browser' ? 'grid' : 'none';
     document.getElementById('device-thumbs').style.display  = v === 'device'  ? 'block' : 'none';
-    S.device = v === 'browser' ? 'browser' : v === 'device' ? 'phone' : 'bare';
+    S.device = v === 'browser' ? 'browser' : v === 'device' ? 'terminal' : 'bare';
     applyDevice();
   });
   seg('g-fmt', v => S.fmt = v);
@@ -218,7 +218,7 @@ function loadImg(file) {
     S.imgSrc   = e.target.result;
     S.fileName = file.name;
     if (S.devtype === 'code') S.devtype = 'browser';
-    ['frame-img-browser','frame-img-terminal','frame-img-phone','frame-img-tablet','frame-img-bare'].forEach(id => {
+    ['frame-img-browser','frame-img-terminal','frame-img-bare'].forEach(id => {
       document.getElementById(id).src = S.imgSrc;
     });
     document.getElementById('hdr-file').textContent       = file.name;
@@ -262,7 +262,7 @@ function applyAll() {
 }
 
 function applyDevice() {
-  ['browser','terminal','phone','tablet','bare','code'].forEach(f => {
+  ['browser','terminal','bare','code'].forEach(f => {
     const el = document.getElementById('frm-' + f); if (el) el.style.display = 'none';
   });
   if (S.devtype === 'code') {
@@ -336,8 +336,6 @@ function applyRadius() {
   const r = S.radius;
   const b  = document.getElementById('frm-browser');     if (b)  b.style.borderRadius  = `${r}px ${r}px ${Math.max(r-2,2)}px ${Math.max(r-2,2)}px`;
   const t  = document.getElementById('frm-terminal');    if (t)  t.style.borderRadius  = `${r}px`;
-  const p  = document.getElementById('frm-phone');       if (p)  p.style.borderRadius  = `${Math.max(r*3,28)}px`;
-  const tb = document.getElementById('frm-tablet');      if (tb) tb.style.borderRadius = `${Math.max(r,10)}px`;
   const bi = document.getElementById('frame-img-bare');  if (bi) bi.style.borderRadius = `${r}px`;
   const fc = document.getElementById('frm-code');        if (fc) fc.style.borderRadius = `${r}px`;
 }
@@ -351,7 +349,7 @@ function applyTransform() {
 function applyShadow() {
   const sh = S.shadow === 0 ? 'none'
     : `0 ${S.shadow*4}px ${S.shadow*12}px rgba(0,0,0,${Math.min(.3+S.shadow*.07,.95)})`;
-  ['frm-browser','frm-terminal','frm-phone','frm-tablet','frm-code'].forEach(id => {
+  ['frm-browser','frm-terminal','frm-code'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.boxShadow = sh;
   });
   const bi = document.getElementById('frame-img-bare'); if (bi) bi.style.boxShadow = sh;
@@ -398,7 +396,7 @@ async function captureStage(scale) {
   const stage  = document.getElementById('ss-stage');
   const mockup = document.getElementById('mockup');
 
-  const frameIds = ['frm-browser','frm-terminal','frm-phone','frm-tablet','frm-bare','frm-code'];
+  const frameIds = ['frm-browser','frm-terminal','frm-bare','frm-code'];
   let frameEl = null;
   for (const id of frameIds) {
     const el = document.getElementById(id);
@@ -602,7 +600,7 @@ async function captureStage(scale) {
 
   } else if (S.devtype === 'device' && S.device === 'terminal') {
     const dotY = fy + barH / 2;
-    [['#ff5f57',14],['#febc2e',32],['#28c840',50]].forEach(([fill,ox]) => {
+    [['#ff5f57',14],['#febc2e',32],['#454545',50]].forEach(([fill,ox]) => {
       ctx.beginPath(); ctx.arc(fx+ox, dotY, 5.5, 0, Math.PI*2);
       ctx.fillStyle = fill; ctx.fill();
     });
@@ -662,7 +660,7 @@ async function doCopy() {
 function doReset() {
   S.imgSrc = null; S.fileName = null; S.devtype = 'browser';
   document.getElementById('file-in').value = '';
-  ['frame-img-browser','frame-img-terminal','frame-img-phone','frame-img-tablet','frame-img-bare'].forEach(id => {
+  ['frame-img-browser','frame-img-terminal','frame-img-bare'].forEach(id => {
     document.getElementById(id).src = '';
   });
   const fc = document.getElementById('frm-code'); if (fc) fc.style.display = 'none';
